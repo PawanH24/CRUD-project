@@ -6,61 +6,57 @@ import TableSearch from "@/app/components/TableSearch";
 import Table from "@/app/components/Table";
 import FormModal from "@/app/components/FormModal";
 import Image from "next/image";
-import { role, teachersData } from "@/lib/data";
+import { role, studentsData } from "@/lib/data";
 
-type Teacher = {
+type Student = {
   id: number;
-  teacherId: string;
+  studentId: string;
   name: string;
   email?: string;
   photo: string;
-  phone: string;
-  subjects: string[];
-  classes: string[];
+  phone?: string;
+  grade: number;
+  class: string;
   address: string;
 };
 
 const columns = [
   { header: "Info", accessor: "info" },
   {
-    header: "Teacher ID",
-    accessor: "teacherId",
+    header: "Student ID",
+    accessor: "studentId",
     className: "hidden md:table-cell",
   },
-  {
-    header: "Subjects",
-    accessor: "subjects",
-    className: "hidden md:table-cell",
-  },
-  { header: "Classes", accessor: "classes", className: "hidden md:table-cell" },
+  { header: "Grade", accessor: "grade", className: "hidden md:table-cell" },
+  { header: "Class", accessor: "class", className: "hidden md:table-cell" },
   { header: "Phone", accessor: "phone", className: "hidden md:table-cell" },
   { header: "Address", accessor: "address", className: "hidden md:table-cell" },
   { header: "Actions", accessor: "action", className: "hidden md:table-cell" },
 ];
 
 const StudentListPage = () => {
-  const [teachers, setTeachers] = useState<Teacher[]>(teachersData);
+  const [students, setStudents] = useState<Student[]>(studentsData);
 
-  const handleCreate = (teacher: Teacher) => {
-    setTeachers((prev) => [teacher, ...prev]);
+  const handleCreate = (student: Student) => {
+    setStudents((prev) => [student, ...prev]);
   };
 
-  const handleUpdate = (updated: Teacher) => {
-    setTeachers((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+  const handleUpdate = (updated: Student) => {
+    setStudents((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
   };
 
   const handleDelete = (id: number) => {
-    setTeachers((prev) => prev.filter((t) => t.id !== id));
+    setStudents((prev) => prev.filter((s) => s.id !== id));
   };
 
-  const renderRow = (item: Teacher) => (
+  const renderRow = (item: Student) => (
     <tr
       key={item.id}
       className="border-b border-gray-200 even:bg-slate-50 hover:bg-PurpleLight"
     >
       <td className="flex items-center gap-4 p-4">
         <Image
-          src="/avatar.png"
+          src={item.photo}
           alt=""
           width={40}
           height={40}
@@ -72,24 +68,23 @@ const StudentListPage = () => {
         </div>
       </td>
 
-      <td className="hidden md:table-cell">{item.teacherId}</td>
-      <td className="hidden md:table-cell">{item.subjects.join(", ")}</td>
-      <td className="hidden md:table-cell">{item.classes.join(", ")}</td>
+      <td className="hidden md:table-cell">{item.studentId}</td>
+      <td className="hidden md:table-cell">{item.grade}</td>
+      <td className="hidden md:table-cell">{item.class}</td>
       <td className="hidden md:table-cell">{item.phone}</td>
       <td className="hidden md:table-cell">{item.address}</td>
 
       <td>
         <div className="flex gap-2">
           <FormModal
-            table="teacher"
+            table="student"
             type="update"
             data={item}
             onUpdate={handleUpdate}
           />
-
           {role === "admin" && (
             <FormModal
-              table="teacher"
+              table="student"
               type="delete"
               id={item.id}
               onDelete={handleDelete}
@@ -103,18 +98,17 @@ const StudentListPage = () => {
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
       <div className="flex justify-between items-center">
-        <h1 className="hidden md:block text-lg font-semibold">All Teachers</h1>
+        <h1 className="hidden md:block text-lg font-semibold">All Students</h1>
 
         <div className="flex gap-4 items-center">
           <TableSearch />
-
           {role === "admin" && (
-            <FormModal table="teacher" type="create" onCreate={handleCreate} />
+            <FormModal table="student" type="create" onCreate={handleCreate} />
           )}
         </div>
       </div>
 
-      <Table columns={columns} data={teachers} renderRow={renderRow} />
+      <Table columns={columns} data={students} renderRow={renderRow} />
       <PageButton />
     </div>
   );

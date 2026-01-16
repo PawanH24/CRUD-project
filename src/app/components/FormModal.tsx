@@ -1,26 +1,54 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { z } from "zod";
 
-/* ---------------- ZOD SCHEMA ---------------- */
+type TableType = "teacher" | "student" | "parent" | "staff";
 
-const teacherSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email"),
-  phone: z.string().min(1, "Phone is required"),
-  address: z.string().min(1, "Address is required"),
-  subjects: z.string().min(1, "Subjects are required"),
-  classes: z.string().min(1, "Classes are required"),
-});
-
-type TeacherFormData = z.infer<typeof teacherSchema>;
-
-/* ---------------- PROPS ---------------- */
+{
+  /*scaling */
+}
+const tableFields: Record<
+  TableType,
+  { name: string; type?: "text" | "email" | "tel"; placeholder?: string }[]
+> = {
+  teacher: [
+    { name: "teacherId", placeholder: "Teacher ID" },
+    { name: "name", placeholder: "Name" },
+    { name: "email", type: "email", placeholder: "Email" },
+    { name: "phone", type: "tel", placeholder: "Phone" },
+    { name: "subjects", placeholder: "Subjects" },
+    { name: "classes", placeholder: "Classes" },
+    { name: "address", placeholder: "Address" },
+  ],
+  student: [
+    { name: "studentId", placeholder: "Student ID" },
+    { name: "name", placeholder: "Name" },
+    { name: "email", type: "email", placeholder: "Email" },
+    { name: "phone", type: "tel", placeholder: "Phone" },
+    { name: "grade", placeholder: "Grade" },
+    { name: "class", placeholder: "Class" },
+    { name: "address", placeholder: "Address" },
+  ],
+  parent: [
+    { name: "parentId", placeholder: "Parent ID" },
+    { name: "name", placeholder: "Name" },
+    { name: "email", type: "email", placeholder: "Email" },
+    { name: "phone", type: "tel", placeholder: "Phone" },
+    { name: "address", placeholder: "Address" },
+  ],
+  staff: [
+    { name: "staffId", placeholder: "Staff ID" },
+    { name: "name", placeholder: "Name" },
+    { name: "email", type: "email", placeholder: "Email" },
+    { name: "phone", type: "tel", placeholder: "Phone" },
+    { name: "address", placeholder: "Address" },
+  ],
+};
 
 type Props = {
-  table: "teacher" | "student" | "parent";
+  table: TableType;
   type: "create" | "update" | "delete";
   id?: number;
   data?: any;
@@ -40,78 +68,60 @@ const FormModal = ({
 }: Props) => {
   const [open, setOpen] = useState(false);
 
-  const [formData, setFormData] = useState<TeacherFormData>({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-    subjects: "",
-    classes: "",
-  });
+  const fields = tableFields[table];
 
-  const [errors, setErrors] = useState<Partial<TeacherFormData>>({});
+  const initialForm: Record<string, any> = {};
+  fields.forEach((f) => (initialForm[f.name] = data?.[f.name] ?? ""));
 
-  /* ---------------- HELPERS ---------------- */
+  const [formData, setFormData] = useState<Record<string, any>>(initialForm);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [photo, setPhoto] = useState<string>(data?.photo ?? "/avatar.png");
 
   const resetForm = () => {
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      address: "",
-      subjects: "",
-      classes: "",
-    });
+    setFormData(initialForm);
     setErrors({});
+    setPhoto("/avatar.png");
   };
 
   const fillForm = () => {
     if (!data) return;
-
-    setFormData({
-      name: data.name ?? "",
-      email: data.email ?? "",
-      phone: data.phone ?? "",
-      address: data.address ?? "",
-      subjects: data.subjects?.join(", ") ?? "",
-      classes: data.classes?.join(", ") ?? "",
+    const filled: Record<string, any> = {};
+    fields.forEach((f) => {
+      filled[f.name] = data[f.name] ?? "";
     });
+    setFormData(filled);
+    setPhoto(data.photo ?? "/avatar.png");
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: undefined }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  /* ---------------- SUBMIT ---------------- */
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") setPhoto(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = () => {
-    const result = teacherSchema.safeParse(formData);
-
-    if (!result.success) {
-      const fieldErrors: Partial<TeacherFormData> = {};
-      result.error.issues.forEach((err) => {
-        const field = err.path[0] as keyof TeacherFormData;
-        fieldErrors[field] = err.message;
-      });
+    const fieldErrors: Record<string, string> = {};
+    fields.forEach((f) => {
+      if (!formData[f.name])
+        fieldErrors[f.name] = `${f.placeholder || f.name} is required`;
+    });
+    if (Object.keys(fieldErrors).length > 0) {
       setErrors(fieldErrors);
       return;
     }
 
-    const payload = {
-      id: data?.id ?? Date.now(),
-      teacherId:
-        data?.teacherId ??
-        `${Math.floor(1000000000 + Math.random() * 9000000000)}`,
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      address: formData.address,
-      subjects: formData.subjects.split(",").map((s) => s.trim()),
-      classes: formData.classes.split(",").map((c) => c.trim()),
-      photo: "/avatar.png",
-    };
+    const payload = { ...formData, id: data?.id ?? Date.now(), photo };
 
     if (type === "create") onCreate?.(payload);
     if (type === "update") onUpdate?.(payload);
@@ -119,8 +129,6 @@ const FormModal = ({
     resetForm();
     setOpen(false);
   };
-
-  /* ---------------- UI ---------------- */
 
   const size = type === "create" ? "w-8 h-8" : "w-7 h-7";
   const bgColor =
@@ -158,37 +166,41 @@ const FormModal = ({
             {(type === "create" || type === "update") && (
               <>
                 <h2 className="text-lg font-semibold mb-4">
-                  {type === "create" ? "Add Teacher" : "Edit Teacher"}
+                  {type === "create" ? `Add ${table}` : `Edit ${table}`}
                 </h2>
 
+                {/* Photo Upload */}
+                <div className="mb-4 flex flex-col items-center">
+                  <div className="w-24 h-24 rounded-full overflow-hidden border mb-2">
+                    <img
+                      src={photo}
+                      alt={`${table} photo`}
+                      className="object-cover w-full h-full"
+                    />
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    className="text-sm"
+                  />
+                </div>
+
+                {/* Dynamic Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {(
-                    [
-                      "name",
-                      "email",
-                      "phone",
-                      "address",
-                      "subjects",
-                      "classes",
-                    ] as const
-                  ).map((field) => (
-                    <div key={field}>
+                  {fields.map((field) => (
+                    <div key={field.name}>
                       <input
-                        name={field}
-                        placeholder={
-                          field === "subjects"
-                            ? "Subjects (comma separated)"
-                            : field === "classes"
-                            ? "Classes (comma separated)"
-                            : field.charAt(0).toUpperCase() + field.slice(1)
-                        }
+                        name={field.name}
+                        type={field.type || "text"}
+                        placeholder={field.placeholder || field.name}
                         className="border p-2 rounded w-full"
-                        value={formData[field]}
+                        value={formData[field.name]}
                         onChange={handleChange}
                       />
-                      {errors[field] && (
+                      {errors[field.name] && (
                         <p className="text-red-500 text-xs mt-1">
-                          {errors[field]}
+                          {errors[field.name]}
                         </p>
                       )}
                     </div>
@@ -220,7 +232,6 @@ const FormModal = ({
                 <h2 className="text-lg font-semibold mb-6">
                   Are you sure you want to delete this {table}?
                 </h2>
-
                 <div className="flex justify-end gap-4">
                   <button
                     onClick={() => setOpen(false)}

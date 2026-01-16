@@ -20,7 +20,7 @@ const Navbar = () => {
           <Image src="/announcement.png" alt="" width={20} height={20} />
         </div>
         <div className="flex flex-col">
-          <span className="text-xs leading 3 front-medium">Pawan Hada</span>
+          <span className="text-xs leading 3 front-medium">User Name</span>
           <span className="text-[10px] text-gray-500 text-right">Admin</span>
         </div>
         <Image
