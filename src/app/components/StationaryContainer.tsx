@@ -1,29 +1,39 @@
 import StationaryModal from "@/app/components/StationaryModal";
 import Image from "next/image";
+import { IStationaryContainerProps } from "@/app/types/stationaryInterface";
 
-const StationaryContainer = ({ product, onUpdate, onDelete }: any) => {
+const StationaryContainer = ({
+  product,
+  onUpdate,
+  onDelete,
+}: IStationaryContainerProps) => {
+  const imageUrl = product.image?.trim() || "/placeholder.jpg";
   return (
-    <div className="bg-white rounded-2xl border overflow-hidden max-w-[260px]">
-      <div className="relative h-48 bg-gray-100">
+    <div className="bg-white rounded-2xl border overflow-hidden max-w-[260px] w-full">
+      <div className="relative h-48 w-full bg-gray-100 flex items-center justify-center">
         <Image
-          src={product.image}
+          src={imageUrl}
           alt={product.title}
-          fill
+          width={208}
+          height={192}
           className="object-contain p-2"
+          style={{
+            maxWidth: "100%",
+            maxHeight: "100%",
+            width: "auto",
+            height: "auto",
+          }}
         />
 
-        <div className="absolute top-3 right-3 flex gap-2 z-5">
-          {/* Edit */}
+        <div className="absolute top-3 right-3 flex flex-col gap-2 z-5">
           <StationaryModal type="update" data={product} onSubmit={onUpdate} />
-
-          {/* Delete */}
           <StationaryModal type="delete" data={product} onDelete={onDelete} />
         </div>
       </div>
 
       <div className="p-4">
         <h3 className="text-sm font-medium">{product.title}</h3>
-        <p className="text-red-500 font-bold">${product.price}</p>
+        <p className="font-semibold">${product.price}</p>
       </div>
     </div>
   );

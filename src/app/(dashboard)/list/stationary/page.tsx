@@ -4,42 +4,74 @@ import { useState, useEffect } from "react";
 import StationaryContainer from "@/app/components/StationaryContainer";
 import TableSearch from "@/app/components/TableSearch";
 import { role } from "@/lib/data";
-import FormModal from "@/app/components/FormModal";
 import StationaryModal from "@/app/components/StationaryModal";
+import { IProduct } from "@/app/types/stationaryInterface";
+import { productAPI } from "@/app/types/api";
 
 const ProductsPage = () => {
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [products, setProducts] = useState<IProduct[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
-    // Fetch data from FakeStoreAPI
-    fetch("https://fakestoreapi.com/products")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        return response.json(); // Convert to JSON
-      })
-      .then((data) => {
-        setProducts(data); // Save data to state
-        setLoading(false);
-      })
-      .catch((error) => {
-        setError(error.message);
-        setLoading(false);
-        console.error("Fetch error:", error);
-      });
-  }, []); // Empty array means run once when component loads
+    fetchProducts();
+  }, []);
 
-  const handleUpdate = (updatedProduct: any) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
-    );
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const data = await productAPI.getAll();
+      setProducts(data);
+      setError(null);
+    } catch (error: any) {
+      setError(error.message);
+      console.error("Fetch error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = (id: number) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
+  const handleCreate = async (newProduct: IProduct) => {
+    try {
+      setIsSubmitting(true);
+      const { id, ...productData } = newProduct;
+      const createdProduct = await productAPI.create(productData);
+      setProducts((prev) => [...prev, createdProduct]);
+    } catch (error: any) {
+      console.error("Create error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdate = async (updatedProduct: IProduct) => {
+    if (!updatedProduct.id) return;
+
+    try {
+      setIsSubmitting(true);
+      const { id, ...productData } = updatedProduct;
+      const result = await productAPI.update(id!, productData);
+      setProducts((prev) =>
+        prev.map((p) => (p.id === updatedProduct.id ? result : p))
+      );
+    } catch (error: any) {
+      console.error("Update error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      setIsSubmitting(true);
+      await productAPI.delete(id);
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+    } catch (error: any) {
+      console.error("Delete error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -67,22 +99,17 @@ const ProductsPage = () => {
           <TableSearch />
 
           {role === "admin" && (
-            <StationaryModal
-              type="create"
-              onSubmit={(newProduct) =>
-                setProducts((prev) => [...prev, newProduct])
-              }
-            />
+            <StationaryModal type="create" onSubmit={handleCreate} />
           )}
         </div>
       </div>
-      {/* Grid Layout - 5 items per row on large screens */}
+
       <div className="flex justify-center">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {products.map((product) => (
+          {products.map((product: IProduct) => (
             <StationaryContainer
-              key={product.id} // Important: unique key for each item
-              product={product} // Pass the whole product object
+              key={product.id}
+              product={product}
               onUpdate={handleUpdate}
               onDelete={handleDelete}
             />
