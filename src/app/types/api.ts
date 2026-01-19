@@ -1,7 +1,7 @@
 import { IProduct } from "./stationaryInterface";
 
 const API_BASE_URL =
-  "https://a4d47a2e-ca39-4067-87ff-f1db77bb1a56.mock.pstmn.io/products"; // api crated in postman not dynamic static api.
+  "https://696ca9c8f4a79b31517f7f70.mockapi.io/product/product"; // api crated in postman not dynamic static api.https://a4d47a2e-ca39-4067-87ff-f1db77bb1a56.mock.pstmn.io/products
 // working api -https://fakestoreapi.com/products
 export const productAPI = {
   async getAll() {

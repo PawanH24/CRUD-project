@@ -5,6 +5,7 @@ export interface IProduct {
   title: string;
   price: number;
   image: string;
+  description?: string;
 }
 
 export interface IStationaryContainerProps {
